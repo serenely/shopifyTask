@@ -1,0 +1,156 @@
+{% schema %}
+{
+  "name": "Секция продукта события",
+  "tag": "section",
+  "class": "event-product-section",
+  "settings": [],
+  "presets": [
+    {
+      "name": "Event Section Custom",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}
+
+<div class="event-product" style="display: flex; gap: 40px; align-items: flex-start; justify-content: center; padding: 40px 20px; font-family: sans-serif;">
+  <div class="event-product__wrapper" style="display: flex; gap: 40px; width: 100%; max-width: 1200px;">
+    
+    <div class="event-product__left" style="flex: 1; max-width: 600px;">
+      {% if product.featured_image %}
+        <img 
+          src="{{ product.featured_image | img_url: '800x' }}" 
+          alt="{{ product.title }}" 
+          width="{{ product.featured_image.width }}" 
+          height="{{ product.featured_image.height }}"
+          loading="lazy"
+          style="width: 100%; height: auto; border-radius: 12px;"
+        >
+      {% endif %}
+      <h1 style="margin-top: 20px; font-size: 28px;">{{ product.title }}</h1>
+      <div style="margin-top: 10px; color: #555;">{{ product.description }}</div>
+    </div>
+
+    <!-- Правая колонка -->
+    <div class="event-product__right" style="flex: 1; max-width: 500px;">
+      <div class="event-product__price" style="font-size: 20px; margin-bottom: 20px; font-weight: bold;">{{ product.price | money }}</div>
+
+      <form id="custom-add-to-cart-form" method="post" action="/cart/add" style="display: flex; flex-direction: column; gap: 12px;">
+        <input type="hidden" name="id" id="variant-id-input">
+
+        <label>Тип события</label>
+        <select id="event-type" style="padding: 8px; border-radius: 8px;">
+          <option value="Group classes">Group classes</option>
+          <option value="10km marathon">10km marathon</option>
+        </select>
+
+        <label>Дата</label>
+        <select id="event-date" style="padding: 8px; border-radius: 8px;">
+          <option value="30.05">30.05</option>
+          <option value="31.05">31.05</option>
+        </select>
+
+        <label>Время</label>
+        <select id="event-time" style="padding: 8px; border-radius: 8px;">
+          <option value="09:00">09:00</option>
+          <option value="09:30">09:30</option>
+          <option value="10:00">10:00</option>
+          <option value="10:30">10:30</option>
+          <option value="11:00">11:00</option>
+          <option value="11:30">11:30</option>
+          <option value="12:00">12:00</option>
+          <option value="12:30">12:30</option>
+        </select>
+
+        <hr style="margin: 20px 0;">
+
+        <label>Имя*</label>
+        <input type="text" name="properties[Имя]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Фамилия*</label>
+        <input type="text" name="properties[Фамилия]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Email*</label>
+        <input type="email" name="properties[Email]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Телефон*</label>
+        <input type="tel" name="properties[Телефон]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Почтовый индекс*</label>
+        <input type="text" name="properties[Почтовый индекс]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Дата рождения*</label>
+        <input type="date" name="properties[Дата рождения]" required style="padding: 8px; border-radius: 8px;">
+
+        <label>Пол*</label>
+        <select name="properties[Пол]" required style="padding: 8px; border-radius: 8px;">
+          <option value="">Выберите</option>
+          <option value="Мужской">Мужской</option>
+          <option value="Женский">Женский</option>
+          <option value="Другое">Другое</option>
+        </select>
+
+        <label>Код пользователя (необязательно)</label>
+        <input type="text" name="properties[Код пользователя]" style="padding: 8px; border-radius: 8px;">
+
+        <button type="submit" style="margin-top: 20px; background: black; color: white; padding: 12px; border: none; border-radius: 10px; cursor: pointer;">
+          Добавить в корзину
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const typeSelect = document.getElementById("event-type");
+      const dateSelect = document.getElementById("event-date");
+      const timeSelect = document.getElementById("event-time");
+      const priceContainer = document.querySelector(".event-product__price");
+      const hiddenInput = document.getElementById("variant-id-input");
+
+      const productVariants = {{ product.variants | json }};
+
+      function updatePrice() {
+        const selectedType = typeSelect.value;
+        const selectedDate = dateSelect.value;
+        const selectedTime = timeSelect.value;
+
+        const matchingVariant = productVariants.find(variant => {
+          return (
+            variant.option1 === selectedType &&
+            variant.option2 === selectedDate &&
+            variant.option3 === selectedTime &&
+            variant.available
+          );
+        });
+
+        if (matchingVariant) {
+          priceContainer.textContent = (matchingVariant.price / 100).toFixed(2) + " лв";
+          hiddenInput.value = matchingVariant.id;
+        } else {
+          priceContainer.textContent = "Нет доступного варианта";
+          hiddenInput.value = "";
+        }
+      }
+
+      typeSelect.addEventListener("change", updatePrice);
+      dateSelect.addEventListener("change", updatePrice);
+      timeSelect.addEventListener("change", updatePrice);
+
+      updatePrice();
+
+      const form = document.getElementById("custom-add-to-cart-form");
+      form.addEventListener("submit", function (e) {
+        if (!hiddenInput.value) {
+          e.preventDefault();
+          alert("Пожалуйста, выберите корректные дату и время.");
+          return;
+        }
+
+        setTimeout(function () {
+          window.location.href = "/cart";
+        }, 300);
+      });
+    });
+  </script>
+</div>
